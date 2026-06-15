@@ -1,0 +1,84 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+env:
+  AWS_REGION: ${{ vars.AWS_REGION }}
+  ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
+  ARTIFACT_BUCKET: ${{ vars.ARTIFACT_BUCKET }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: corretto
+          java-version: '25'
+
+      - name: Build JAR
+        run: ./mvnw package -q -DskipTests
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push image
+        env:
+          IMAGE_URI: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest
+        run: |
+          docker build -t $IMAGE_URI .
+          docker push $IMAGE_URI
+
+      - name: Check for deploy bundle changes
+        id: check-bundle
+        run: |
+          # On the initial commit HEAD~1 won't exist, so we always upload then.
+          # On subsequent pushes we only upload if appspec.yaml or taskdef.json changed.
+          if ! git rev-parse HEAD~1 > /dev/null 2>&1 || \
+             git diff --name-only HEAD~1 HEAD | grep -qE 'appspec\.yaml|taskdef\.json'; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Substitute taskdef placeholders
+        if: steps.check-bundle.outputs.changed == 'true'
+        env:
+          TASK_FAMILY: ${{ vars.TASK_FAMILY }}
+          ECS_TASK_EXECUTION_ROLE_ARN: ${{ secrets.ECS_TASK_EXECUTION_ROLE_ARN }}
+          ECS_TASK_ROLE_ARN: ${{ secrets.ECS_TASK_ROLE_ARN }}
+          DB_HOST: ${{ vars.DB_HOST }}
+          DB_PORT: ${{ vars.DB_PORT }}
+          DB_NAME: ${{ vars.DB_NAME }}
+          DB_SECRET_ARN: ${{ secrets.DB_SECRET_ARN }}
+          REDIS_HOST: ${{ vars.REDIS_HOST }}
+          REDIS_PORT: ${{ vars.REDIS_PORT }}
+          LOG_GROUP: ${{ vars.LOG_GROUP }}
+          AWS_REGION: ${{ vars.AWS_REGION }}
+        run: envsubst < taskdef.json > taskdef-resolved.json && mv taskdef-resolved.json taskdef.json
+
+      - name: Upload deploy bundle
+        if: steps.check-bundle.outputs.changed == 'true'
+        run: |
+          zip deploy-bundle.zip appspec.yaml taskdef.json
+          aws s3 cp deploy-bundle.zip s3://${{ env.ARTIFACT_BUCKET }}/deploy/deploy-bundle.zip
+          echo "Deploy bundle uploaded"
