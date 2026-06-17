@@ -47,7 +47,7 @@ public class RdsIamDataSourceConfig {
     public void refreshToken() {
         if (dataSource != null) {
             dataSource.getHikariConfigMXBean().setPassword(generateToken());
-            dataSource.softEvictConnections();
+            dataSource.getHikariPoolMXBean().softEvictConnections();
         }
     }
 
