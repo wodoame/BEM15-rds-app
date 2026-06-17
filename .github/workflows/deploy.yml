@@ -52,10 +52,11 @@ jobs:
       - name: Check for deploy bundle changes
         id: check-bundle
         run: |
-          # On the initial commit HEAD~1 won't exist, so we always upload then.
-          # On subsequent pushes we only upload if appspec.yaml or taskdef.json changed.
+          # Upload if: initial commit, bundle files changed, or bundle is missing from S3
+          # (missing bundle can happen if a prior run failed before uploading).
           if ! git rev-parse HEAD~1 > /dev/null 2>&1 || \
-             git diff --name-only HEAD~1 HEAD | grep -qE 'appspec\.yaml|taskdef\.json'; then
+             git diff --name-only HEAD~1 HEAD | grep -qE 'appspec\.yaml|taskdef\.json' || \
+             ! aws s3 ls s3://${{ env.ARTIFACT_BUCKET }}/deploy/deploy-bundle.zip > /dev/null 2>&1; then
             echo "changed=true" >> $GITHUB_OUTPUT
           else
             echo "changed=false" >> $GITHUB_OUTPUT
