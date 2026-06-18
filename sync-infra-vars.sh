@@ -49,8 +49,8 @@ ECS_TASK_EXECUTION_ROLE_ARN=$(cfn_output "$IAM_STACK" ECSTaskExecutionRoleArn)
 ECS_TASK_ROLE_ARN=$(cfn_output "$IAM_STACK" ECSTaskRoleArn)
 GITHUB_ACTIONS_ROLE_ARN=$(cfn_output "$IAM_STACK" GitHubActionsRoleArn)
 
-DB_SECRET_ARN=$(cfn_output "$DB_STACK" DBSecretArn)
 DB_NAME=$(cfn_output "$DB_STACK" DBName)
+DB_USERNAME=$(cfn_output "$DB_STACK" DBUsername)
 
 # Derived values
 ECR_REPOSITORY="${ECR_REPO_URI##*/}"   # strip registry prefix (keep only repo name)
@@ -66,10 +66,9 @@ gh variable set AWS_REGION      --body "$AWS_REGION"      --repo "$REPO"
 gh variable set ECR_REPOSITORY  --body "$ECR_REPOSITORY"  --repo "$REPO"
 gh variable set ARTIFACT_BUCKET --body "$ARTIFACT_BUCKET" --repo "$REPO"
 gh variable set DB_HOST         --body "$DB_HOST"         --repo "$REPO"
-gh variable set DB_PORT         --body "5432"             --repo "$REPO"
 gh variable set DB_NAME         --body "$DB_NAME"         --repo "$REPO"
+gh variable set DB_USERNAME     --body "$DB_USERNAME"     --repo "$REPO"
 gh variable set REDIS_HOST      --body "$REDIS_HOST"      --repo "$REPO"
-gh variable set REDIS_PORT      --body "6379"             --repo "$REPO"
 gh variable set TASK_FAMILY     --body "$TASK_FAMILY"     --repo "$REPO"
 gh variable set LOG_GROUP       --body "$LOG_GROUP"       --repo "$REPO"
 
@@ -77,6 +76,5 @@ gh variable set LOG_GROUP       --body "$LOG_GROUP"       --repo "$REPO"
 gh secret set AWS_ROLE_ARN                --body "$GITHUB_ACTIONS_ROLE_ARN"    --repo "$REPO"
 gh secret set ECS_TASK_EXECUTION_ROLE_ARN --body "$ECS_TASK_EXECUTION_ROLE_ARN" --repo "$REPO"
 gh secret set ECS_TASK_ROLE_ARN           --body "$ECS_TASK_ROLE_ARN"           --repo "$REPO"
-gh secret set DB_SECRET_ARN               --body "$DB_SECRET_ARN"               --repo "$REPO"
 
 echo "Done. All variables and secrets are up to date."

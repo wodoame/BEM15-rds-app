@@ -69,13 +69,10 @@ jobs:
           ECS_TASK_EXECUTION_ROLE_ARN: ${{ secrets.ECS_TASK_EXECUTION_ROLE_ARN }}
           ECS_TASK_ROLE_ARN: ${{ secrets.ECS_TASK_ROLE_ARN }}
           DB_HOST: ${{ vars.DB_HOST }}
-          DB_PORT: ${{ vars.DB_PORT }}
           DB_NAME: ${{ vars.DB_NAME }}
-          DB_SECRET_ARN: ${{ secrets.DB_SECRET_ARN }}
+          DB_USERNAME: ${{ vars.DB_USERNAME }}
           REDIS_HOST: ${{ vars.REDIS_HOST }}
-          REDIS_PORT: ${{ vars.REDIS_PORT }}
           LOG_GROUP: ${{ vars.LOG_GROUP }}
-          AWS_REGION: ${{ vars.AWS_REGION }}
         run: envsubst < taskdef.json > taskdef-resolved.json && mv taskdef-resolved.json taskdef.json
 
       - name: Upload deploy bundle

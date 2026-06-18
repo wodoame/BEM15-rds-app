@@ -18,20 +18,18 @@
       ],
       "environment": [
         { "name": "DB_HOST",    "value": "${DB_HOST}" },
-        { "name": "DB_PORT",    "value": "${DB_PORT}" },
+        { "name": "DB_PORT",    "value": "5432" },
         { "name": "DB_NAME",    "value": "${DB_NAME}" },
+        { "name": "DB_USERNAME", "value": "${DB_USERNAME}" },
         { "name": "REDIS_HOST",  "value": "${REDIS_HOST}" },
-        { "name": "REDIS_PORT",  "value": "${REDIS_PORT}" },
-        { "name": "AWS_REGION",  "value": "${AWS_REGION}" }
-      ],
-      "secrets": [
-        { "name": "DB_USERNAME", "valueFrom": "${DB_SECRET_ARN}:username::" }
+        { "name": "REDIS_PORT",  "value": "6379" },
+        { "name": "AWS_REGION",  "value": "us-east-1" }
       ],
       "logConfiguration": {
         "logDriver": "awslogs",
         "options": {
           "awslogs-group": "${LOG_GROUP}",
-          "awslogs-region": "${AWS_REGION}",
+          "awslogs-region": "us-east-1",
           "awslogs-stream-prefix": "ecs"
         }
       },
