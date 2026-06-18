@@ -34,6 +34,18 @@ public class TodoService {
     }
 
     @CacheEvict(value = "todos", allEntries = true)
+    public void updateTitle(Long id, String title) {
+        String trimmed = title.trim();
+        if (trimmed.isEmpty()) {
+            return;
+        }
+        Todo todo = todoRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Todo not found: " + id));
+        todo.setTitle(trimmed);
+        todoRepository.save(todo);
+    }
+
+    @CacheEvict(value = "todos", allEntries = true)
     public void delete(Long id) {
         todoRepository.deleteById(id);
     }

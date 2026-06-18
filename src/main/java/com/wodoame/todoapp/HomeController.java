@@ -32,6 +32,12 @@ public class HomeController {
         return "redirect:/";
     }
 
+    @PostMapping("/todos/{id}/edit")
+    public String editTodo(@PathVariable Long id, @RequestParam String title) {
+        todoService.updateTitle(id, title);
+        return "redirect:/";
+    }
+
     @PostMapping("/todos/{id}/delete")
     public String deleteTodo(@PathVariable Long id) {
         todoService.delete(id);

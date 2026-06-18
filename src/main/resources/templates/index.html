@@ -25,6 +25,13 @@
 
       .btn-delete { opacity: 0; transition: opacity 0.15s; color: #dc3545; border: none; background: none; font-size: 1rem; line-height: 1; padding: 2px 6px; }
       .btn-delete:hover { color: #a71d2a; }
+
+      .btn-edit { opacity: 0; transition: opacity 0.15s; color: #6c757d; border: none; background: none; font-size: 1rem; line-height: 1; padding: 2px 6px; }
+      .btn-edit:hover { color: #b83b3b; }
+      .todo-item:hover .btn-edit { opacity: 1; }
+
+      .todo-edit-input { font-size: 1rem; }
+      .todo-edit-input:focus { box-shadow: none; }
     </style>
   </head>
   <body>
@@ -50,6 +57,11 @@
                   <input class="form-check-input" type="checkbox" th:checked="${todo.completed}" onchange="this.form.submit()">
                 </form>
                 <span class="todo-text flex-grow-1" th:classappend="${todo.completed} ? 'completed'" th:text="${todo.title}"></span>
+                <form th:action="@{/todos/{id}/edit(id=${todo.id})}" method="post" class="todo-edit-form flex-grow-1 d-none">
+                  <input type="text" name="title" th:value="${todo.title}" class="form-control border-0 shadow-none p-0 todo-edit-input" autocomplete="off" required
+                         onkeydown="if (event.key === 'Escape') cancelEdit(this);">
+                </form>
+                <button type="button" class="btn-edit" title="Edit" onclick="startEdit(this)">✎</button>
                 <form th:action="@{/todos/{id}/delete(id=${todo.id})}" method="post">
                   <button type="submit" class="btn-delete" title="Delete">✕</button>
                 </form>
@@ -77,5 +89,25 @@
       </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+    <script>
+      function startEdit(btn) {
+        const item = btn.closest('.todo-item');
+        item.querySelector('.todo-text').classList.add('d-none');
+        item.querySelector('.btn-edit').classList.add('d-none');
+        const form = item.querySelector('.todo-edit-form');
+        form.classList.remove('d-none');
+        const input = form.querySelector('input[name=title]');
+        input.focus();
+        input.setSelectionRange(input.value.length, input.value.length);
+      }
+
+      function cancelEdit(input) {
+        const item = input.closest('.todo-item');
+        input.value = input.defaultValue;
+        item.querySelector('.todo-edit-form').classList.add('d-none');
+        item.querySelector('.todo-text').classList.remove('d-none');
+        item.querySelector('.btn-edit').classList.remove('d-none');
+      }
+    </script>
   </body>
 </html>
