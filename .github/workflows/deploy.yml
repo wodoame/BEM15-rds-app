@@ -38,17 +38,8 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Login to ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
-
-      - name: Build and push image
-        env:
-          IMAGE_URI: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest
-        run: |
-          docker build -t $IMAGE_URI .
-          docker push $IMAGE_URI
-
+      # The deploy bundle must be in S3 *before* the image is pushed: the ECR
+      # push triggers CodePipeline, whose S3Source reads the bundle immediately.
       - name: Check for deploy bundle changes
         id: check-bundle
         run: |
@@ -81,3 +72,15 @@ jobs:
           zip deploy-bundle.zip appspec.yaml taskdef.json
           aws s3 cp deploy-bundle.zip s3://${{ env.ARTIFACT_BUCKET }}/deploy/deploy-bundle.zip
           echo "Deploy bundle uploaded"
+
+      - name: Login to ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # Pushed last — this is what triggers CodePipeline.
+      - name: Build and push image
+        env:
+          IMAGE_URI: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest
+        run: |
+          docker build -t $IMAGE_URI .
+          docker push $IMAGE_URI
