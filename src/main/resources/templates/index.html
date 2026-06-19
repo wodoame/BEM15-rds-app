@@ -8,79 +8,119 @@
     <style>
       body { background-color: #f0f2f5; }
 
-      .todo-card { border-radius: 12px; overflow: hidden; }
+      .column-title { font-weight: 700; color: #495057; letter-spacing: 0.5px; }
+      .column-count { font-weight: 600; }
 
-      .todo-input { font-size: 1.1rem; }
-      .todo-input:focus { box-shadow: none; }
+      .btn-add {
+        width: 48px; height: 48px; border-radius: 50%;
+        display: inline-flex; align-items: center; justify-content: center;
+        font-size: 1.6rem; line-height: 1; padding: 0;
+        color: #212529; background-color: transparent; border: none;
+        transition: background-color 0.15s;
+      }
+      .btn-add:hover, .btn-add:focus { color: #212529; background-color: #cfe0ff; }
 
-      .todo-item { transition: background-color 0.15s; }
-      .todo-item:hover { background-color: #f8f9fa; }
-      .todo-item:hover .btn-delete { opacity: 1; }
+      .todo-card { border-radius: 12px; transition: box-shadow 0.15s; }
+      .todo-card:hover { box-shadow: 0 .5rem 1rem rgba(0,0,0,.1) !important; }
+      .todo-card:hover .todo-actions { opacity: 1; }
 
-      .form-check-input { width: 1.2em; height: 1.2em; cursor: pointer; flex-shrink: 0; }
+      .form-check-input { width: 1.2em; height: 1.2em; cursor: pointer; flex-shrink: 0; margin-top: 0.15rem; }
       .form-check-input:checked { background-color: #6c757d; border-color: #6c757d; }
 
-      .todo-text { font-size: 1rem; }
-      .todo-text.completed { text-decoration: line-through; color: #adb5bd; }
+      .todo-title { font-size: 1rem; font-weight: 600; word-break: break-word; }
+      .todo-title.completed { text-decoration: line-through; color: #adb5bd; }
+      .todo-desc { font-size: 0.875rem; color: #6c757d; white-space: pre-wrap; word-break: break-word; }
+      .todo-desc.completed { color: #ced4da; }
 
-      .btn-delete { opacity: 0; transition: opacity 0.15s; color: #dc3545; border: none; background: none; font-size: 1rem; line-height: 1; padding: 2px 6px; }
+      .todo-actions { opacity: 0; transition: opacity 0.15s; }
+      .btn-icon { border: none; background: none; line-height: 1; padding: 4px; font-size: 1rem; display: inline-flex; align-items: center; justify-content: center; }
+      .btn-edit { color: #6c757d; }
+      .btn-edit:hover { color: #b83b3b; }
+      .btn-delete { color: #dc3545; }
       .btn-delete:hover { color: #a71d2a; }
 
-      .btn-edit { opacity: 0; transition: opacity 0.15s; color: #6c757d; border: none; background: none; font-size: 1rem; line-height: 1; padding: 2px 6px; }
-      .btn-edit:hover { color: #b83b3b; }
-      .todo-item:hover .btn-edit { opacity: 1; }
-
-      .todo-edit-input { font-size: 1rem; }
-      .todo-edit-input:focus { box-shadow: none; }
+      .empty-hint { font-size: 0.875rem; color: #adb5bd; }
     </style>
   </head>
   <body>
     <div class="container py-5">
       <div class="row justify-content-center">
-        <div class="col-12 col-sm-10 col-md-7 col-lg-6">
+        <div class="col-12 col-lg-10 col-xl-9">
 
           <h1 class="text-center fw-bold mb-4" style="color: #b83b3b; letter-spacing: -1px; font-size: 3rem;">todos</h1>
 
-          <div class="card shadow todo-card border-0">
+          <!-- Add row -->
+          <div class="d-flex justify-content-start mb-4">
+            <button type="button" class="btn btn-add" data-bs-toggle="modal" data-bs-target="#addModal" title="Add todo" aria-label="Add todo">+</button>
+          </div>
 
-            <!-- Add todo -->
-            <form class="d-flex border-bottom" th:action="@{/todos}" method="post">
-              <input type="text" name="title" class="form-control border-0 shadow-none py-3 px-4 todo-input" placeholder="What needs to be done?" autocomplete="off" required>
-              <button type="submit" class="btn btn-primary px-4 rounded-0">Add</button>
-            </form>
+          <!-- Two columns -->
+          <div class="row g-4">
 
-            <!-- Todo list -->
-            <ul class="list-group list-group-flush" id="todo-list">
-
-              <li th:each="todo : ${todos}" class="list-group-item d-flex align-items-center gap-3 px-4 py-3 todo-item">
-                <form th:action="@{/todos/{id}/toggle(id=${todo.id})}" method="post" class="d-flex">
-                  <input class="form-check-input" type="checkbox" th:checked="${todo.completed}" onchange="this.form.submit()">
-                </form>
-                <span class="todo-text flex-grow-1" th:classappend="${todo.completed} ? 'completed'" th:text="${todo.title}"></span>
-                <form th:action="@{/todos/{id}/edit(id=${todo.id})}" method="post" class="todo-edit-form flex-grow-1 d-none">
-                  <input type="text" name="title" th:value="${todo.title}" class="form-control border-0 shadow-none p-0 todo-edit-input" autocomplete="off" required
-                         onkeydown="if (event.key === 'Escape') cancelEdit(this);">
-                </form>
-                <button type="button" class="btn-edit" title="Edit" onclick="startEdit(this)">✎</button>
-                <form th:action="@{/todos/{id}/delete(id=${todo.id})}" method="post">
-                  <button type="submit" class="btn-delete" title="Delete">✕</button>
-                </form>
-              </li>
-
-            </ul>
-
-            <!-- Footer -->
-            <div class="d-flex align-items-center justify-content-between px-4 py-2 border-top bg-white">
-              <small class="text-muted">2 items left</small>
-              <div class="btn-group btn-group-sm">
-                <a href="?filter=all"       class="btn btn-outline-secondary active">All</a>
-                <a href="?filter=active"    class="btn btn-outline-secondary">Active</a>
-                <a href="?filter=completed" class="btn btn-outline-secondary">Completed</a>
+            <!-- To do -->
+            <div class="col-12 col-md-6">
+              <div class="d-flex align-items-center gap-2 mb-3">
+                <h5 class="column-title mb-0">To do</h5>
+                <span class="badge bg-secondary column-count" th:text="${#lists.size(active)}">0</span>
               </div>
-              <form th:action="@{/todos/completed}" method="post">
-                <input type="hidden" name="_method" value="delete">
-                <button type="submit" class="btn btn-sm btn-link text-muted p-0 text-decoration-none">Clear completed</button>
-              </form>
+              <div class="d-flex flex-column gap-3">
+                <div th:each="todo : ${active}" class="card todo-card border-0 shadow-sm">
+                  <div class="card-body d-flex gap-3">
+                    <form th:action="@{/todos/{id}/toggle(id=${todo.id})}" method="post" class="m-0">
+                      <input class="form-check-input" type="checkbox" th:checked="${todo.completed}" onchange="this.form.submit()" title="Mark complete">
+                    </form>
+                    <div class="flex-grow-1">
+                      <div class="todo-title" th:text="${todo.title}">Title</div>
+                      <div class="todo-desc mt-1" th:if="${todo.description != null}" th:text="${todo.description}">Description</div>
+                    </div>
+                    <div class="todo-actions d-flex align-items-center gap-1">
+                      <button type="button" class="btn-icon btn-edit" title="Edit" onclick="openEdit(this)"
+                              th:attr="data-id=${todo.id},data-title=${todo.title},data-description=${todo.description}">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"/></svg>
+                      </button>
+                      <form th:action="@{/todos/{id}/delete(id=${todo.id})}" method="post" class="m-0">
+                        <button type="submit" class="btn-icon btn-delete" title="Delete">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                        </button>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+                <p class="empty-hint mb-0" th:if="${#lists.isEmpty(active)}">Nothing to do — add one above.</p>
+              </div>
+            </div>
+
+            <!-- Completed -->
+            <div class="col-12 col-md-6">
+              <div class="d-flex align-items-center gap-2 mb-3">
+                <h5 class="column-title mb-0">Completed</h5>
+                <span class="badge bg-secondary column-count" th:text="${#lists.size(completed)}">0</span>
+              </div>
+              <div class="d-flex flex-column gap-3">
+                <div th:each="todo : ${completed}" class="card todo-card border-0 shadow-sm">
+                  <div class="card-body d-flex gap-3">
+                    <form th:action="@{/todos/{id}/toggle(id=${todo.id})}" method="post" class="m-0">
+                      <input class="form-check-input" type="checkbox" th:checked="${todo.completed}" onchange="this.form.submit()" title="Mark active">
+                    </form>
+                    <div class="flex-grow-1">
+                      <div class="todo-title completed" th:text="${todo.title}">Title</div>
+                      <div class="todo-desc completed mt-1" th:if="${todo.description != null}" th:text="${todo.description}">Description</div>
+                    </div>
+                    <div class="todo-actions d-flex align-items-center gap-1">
+                      <button type="button" class="btn-icon btn-edit" title="Edit" onclick="openEdit(this)"
+                              th:attr="data-id=${todo.id},data-title=${todo.title},data-description=${todo.description}">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"/></svg>
+                      </button>
+                      <form th:action="@{/todos/{id}/delete(id=${todo.id})}" method="post" class="m-0">
+                        <button type="submit" class="btn-icon btn-delete" title="Delete">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                        </button>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+                <p class="empty-hint mb-0" th:if="${#lists.isEmpty(completed)}">No completed todos yet.</p>
+              </div>
             </div>
 
           </div>
@@ -88,25 +128,60 @@
         </div>
       </div>
     </div>
+
+    <!-- Add modal -->
+    <div class="modal fade" id="addModal" tabindex="-1" aria-labelledby="addModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+          <form th:action="@{/todos}" method="post">
+            <div class="modal-header">
+              <h5 class="modal-title" id="addModalLabel">New todo</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <input type="text" name="title" class="form-control mb-3" placeholder="Title" autocomplete="off" required autofocus>
+              <textarea name="description" class="form-control" placeholder="Description (optional)" rows="3"></textarea>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+              <button type="submit" class="btn btn-primary px-4">Add</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit modal -->
+    <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+          <form id="editForm" method="post">
+            <div class="modal-header">
+              <h5 class="modal-title" id="editModalLabel">Edit todo</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <input type="text" id="editTitle" name="title" class="form-control mb-3" placeholder="Title" autocomplete="off" required>
+              <textarea id="editDescription" name="description" class="form-control" placeholder="Description (optional)" rows="3"></textarea>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+              <button type="submit" class="btn btn-primary px-4">Save</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
     <script>
-      function startEdit(btn) {
-        const item = btn.closest('.todo-item');
-        item.querySelector('.todo-text').classList.add('d-none');
-        item.querySelector('.btn-edit').classList.add('d-none');
-        const form = item.querySelector('.todo-edit-form');
-        form.classList.remove('d-none');
-        const input = form.querySelector('input[name=title]');
-        input.focus();
-        input.setSelectionRange(input.value.length, input.value.length);
-      }
+      const editModal = new bootstrap.Modal(document.getElementById('editModal'));
 
-      function cancelEdit(input) {
-        const item = input.closest('.todo-item');
-        input.value = input.defaultValue;
-        item.querySelector('.todo-edit-form').classList.add('d-none');
-        item.querySelector('.todo-text').classList.remove('d-none');
-        item.querySelector('.btn-edit').classList.remove('d-none');
+      function openEdit(btn) {
+        document.getElementById('editForm').action = '/todos/' + btn.getAttribute('data-id') + '/edit';
+        document.getElementById('editTitle').value = btn.getAttribute('data-title') || '';
+        document.getElementById('editDescription').value = btn.getAttribute('data-description') || '';
+        editModal.show();
       }
     </script>
   </body>

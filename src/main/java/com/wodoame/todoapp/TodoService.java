@@ -19,9 +19,10 @@ public class TodoService {
     }
 
     @CacheEvict(value = "todos", allEntries = true)
-    public void add(String title) {
+    public void add(String title, String description) {
         Todo todo = new Todo();
         todo.setTitle(title.trim());
+        todo.setDescription(normalize(description));
         todoRepository.save(todo);
     }
 
@@ -34,7 +35,7 @@ public class TodoService {
     }
 
     @CacheEvict(value = "todos", allEntries = true)
-    public void updateTitle(Long id, String title) {
+    public void update(Long id, String title, String description) {
         String trimmed = title.trim();
         if (trimmed.isEmpty()) {
             return;
@@ -42,11 +43,20 @@ public class TodoService {
         Todo todo = todoRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Todo not found: " + id));
         todo.setTitle(trimmed);
+        todo.setDescription(normalize(description));
         todoRepository.save(todo);
     }
 
     @CacheEvict(value = "todos", allEntries = true)
     public void delete(Long id) {
         todoRepository.deleteById(id);
+    }
+
+    private String normalize(String description) {
+        if (description == null) {
+            return null;
+        }
+        String trimmed = description.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 }

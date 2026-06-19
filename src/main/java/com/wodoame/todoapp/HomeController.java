@@ -8,6 +8,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import java.util.List;
+
 @Controller
 @RequiredArgsConstructor
 public class HomeController {
@@ -16,13 +18,16 @@ public class HomeController {
 
     @GetMapping("/")
     public String index(Model model) {
-        model.addAttribute("todos", todoService.getAll());
+        List<Todo> todos = todoService.getAll();
+        model.addAttribute("active", todos.stream().filter(t -> !t.isCompleted()).toList());
+        model.addAttribute("completed", todos.stream().filter(Todo::isCompleted).toList());
         return "index";
     }
 
     @PostMapping("/todos")
-    public String addTodo(@RequestParam String title) {
-        todoService.add(title);
+    public String addTodo(@RequestParam String title,
+                          @RequestParam(required = false) String description) {
+        todoService.add(title, description);
         return "redirect:/";
     }
 
@@ -33,8 +38,10 @@ public class HomeController {
     }
 
     @PostMapping("/todos/{id}/edit")
-    public String editTodo(@PathVariable Long id, @RequestParam String title) {
-        todoService.updateTitle(id, title);
+    public String editTodo(@PathVariable Long id,
+                           @RequestParam String title,
+                           @RequestParam(required = false) String description) {
+        todoService.update(id, title, description);
         return "redirect:/";
     }
 

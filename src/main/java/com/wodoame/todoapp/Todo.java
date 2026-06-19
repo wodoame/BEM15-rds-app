@@ -19,6 +19,9 @@ public class Todo implements Serializable {
     @Column(nullable = false)
     private String title;
 
+    @Column(columnDefinition = "TEXT")
+    private String description;
+
     private boolean completed = false;
 
     @Column(name = "created_at")
